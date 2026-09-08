@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>무의식 관심사 퀴즈 — 나도 모르게 향하는 곳</title>
+<meta name="description" content="15개의 질문으로 스스로 의식하지 못했던 관심의 결을 짚어보고, 그에 맞는 책을 추천받습니다.">
+<style>
+  :root{
+    --bg:#0b0a16;
+    --bg2:#141130;
+    --card:rgba(255,255,255,.045);
+    --card-hi:rgba(255,255,255,.075);
+    --border:rgba(255,255,255,.10);
+    --border-hi:rgba(255,255,255,.22);
+    --text:#eceafa;
+    --muted:#a49ec4;
+    --accent:#a78bfa;
+    --accent2:#f0abfc;
+    --gold:#f3d27a;
+    --radius:18px;
+    --maxw:720px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',system-ui,sans-serif;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:32px 18px 80px;
+  }
+  /* 배경은 고정 레이어로 분리 — background-attachment:fixed 는 모바일에서 끊겨 보입니다 */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(1100px 700px at 15% -10%, #2a1f5c 0%, transparent 60%),
+      radial-gradient(900px 600px at 90% 0%, #3b1d4f 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg2) 0%, var(--bg) 45%, var(--bg) 100%);
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto}
+  .fade{animation:fade .45s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fade{animation:none}*{transition:none!important}}
+
+  .eyebrow{
+    font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 14px
+  }
+  h1{
+    font-size:clamp(28px,6vw,42px);line-height:1.25;margin:0 0 16px;
+    letter-spacing:-.02em;font-weight:800;
+  }
+  h1 .grad{
+    background:linear-gradient(100deg,var(--accent) 10%,var(--accent2) 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  h2{font-size:20px;margin:0 0 12px;letter-spacing:-.01em}
+  h3{font-size:15px;margin:0 0 8px;letter-spacing:-.01em}
+  p{margin:0 0 14px}
+  .lead{color:#cdc8e6;font-size:16px}
+  .muted{color:var(--muted);font-size:14px}
+  .tiny{color:var(--muted);font-size:12.5px;line-height:1.6}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:24px;
+    backdrop-filter:blur(8px);
+  }
+  .card + .card{margin-top:16px}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font:inherit;font-weight:700;color:#1a0f2e;
+    background:linear-gradient(100deg,var(--accent) 0%,var(--accent2) 100%);
+    border:0;border-radius:999px;padding:14px 30px;cursor:pointer;
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.07)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--border);
+    font-weight:600;padding:12px 22px;
+  }
+  .btn.ghost:hover{color:var(--text);border-color:var(--border-hi)}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:22px}
+
+  /* ---- quiz ---- */
+  .bar{height:4px;background:rgba(255,255,255,.09);border-radius:99px;overflow:hidden}
+  .bar > i{
+    display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width .4s cubic-bezier(.4,0,.2,1);
+  }
+  .qmeta{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 10px}
+  .qnum{font-size:12px;letter-spacing:.16em;color:var(--muted)}
+  .qtext{font-size:clamp(19px,4.2vw,24px);font-weight:700;line-height:1.45;margin:22px 0 22px;letter-spacing:-.015em}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{
+    display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
+    font:inherit;color:var(--text);
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:15px 17px;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,transform .12s ease;
+  }
+  .opt:hover{background:var(--card-hi);border-color:var(--border-hi);transform:translateX(3px)}
+  .opt .key{
+    flex:none;width:22px;height:22px;border-radius:7px;margin-top:2px;
+    background:rgba(255,255,255,.07);border:1px solid var(--border);
+    font-size:11px;color:var(--muted);display:grid;place-items:center;font-weight:700;
+  }
+  .opt:hover .key{color:var(--text);border-color:var(--border-hi)}
+
+  /* ---- result ---- */
+  .hero{
+    text-align:center;padding:34px 24px;
+    background:
+      radial-gradient(560px 220px at 50% 0%, rgba(167,139,250,.22), transparent 70%),
+      var(--card);
+  }
+  .badge{
+    display:inline-block;font-size:12px;letter-spacing:.18em;color:var(--muted);
+    border:1px solid var(--border);border-radius:999px;padding:5px 14px;margin-bottom:16px;
+  }
+  .typename{font-size:clamp(30px,7vw,44px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+  .tagline{color:var(--gold);font-size:16px;font-weight:600;margin:0 0 18px}
+  .kw{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+  .kw span{font-size:12.5px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:4px 12px}
+
+  .rows{display:flex;flex-direction:column;gap:13px;margin-top:4px}
+  .row .rtop{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px}
+  .row .rname{font-weight:600}
+  .row .rval{color:var(--muted);font-variant-numeric:tabular-nums}
+  .track{height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
+  .track > i{display:block;height:100%;border-radius:99px;width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.split{grid-template-columns:1fr}}
+  .mini{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+  .mini .lbl{font-size:11.5px;letter-spacing:.16em;color:var(--muted);margin-bottom:8px}
+  .mini .val{font-size:18px;font-weight:700;margin-bottom:6px}
+
+  .check{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+  .check li{margin:0}
+  .check label{
+    display:flex;gap:11px;align-items:flex-start;cursor:pointer;
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:12px 14px;font-size:14.5px;transition:border-color .15s ease,background .15s ease;
+  }
+  .check label:hover{border-color:var(--border-hi)}
+  .check input{margin:4px 0 0;accent-color:var(--accent);flex:none;width:16px;height:16px}
+  .verdict{
+    margin-top:14px;padding:14px 16px;border-radius:12px;
+    background:rgba(167,139,250,.10);border:1px solid rgba(167,139,250,.28);
+    font-size:14.5px;
+  }
+  .verdict b{color:var(--accent2)}
+
+  .book{
+    display:flex;gap:14px;padding:15px 0;border-top:1px solid var(--border);
+  }
+  .book:first-of-type{border-top:0;padding-top:4px}
+  .book .no{
+    flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    font-size:12px;font-weight:800;color:#1a0f2e;
+    background:linear-gradient(100deg,var(--accent),var(--accent2));
+  }
+  .book .bt{font-weight:700;font-size:15.5px;letter-spacing:-.01em}
+  .book .ba{color:var(--muted);font-size:13px;margin-bottom:5px}
+  .book .bw{font-size:14px;color:#c9c4e2;margin:0}
+
+  .note{
+    border-left:2px solid rgba(167,139,250,.5);padding-left:14px;
+    color:var(--muted);font-size:13.5px;margin-top:22px
+  }
+  footer{text-align:center;margin-top:34px}
+  .hidden{display:none}
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:#241c46;border:1px solid var(--border-hi);color:var(--text);
+    padding:11px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;
+    transition:opacity .25s ease,transform .25s ease;z-index:9;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 인트로 ===== -->
+  <section id="intro" class="fade">
+    <p class="eyebrow">Unconscious Interest Quiz</p>
+    <h1>나도 모르게<br><span class="grad">자꾸 향하는 곳</span>이 있습니다</h1>
+    <p class="lead">
+      "나는 이런 걸 좋아해"는 대개 의식이 나중에 붙인 설명입니다.
+      이 퀴즈는 <b>고르려고 고민하기 전에 이미 일어난 반응</b>을 묻습니다.
+      15개의 질문에 오래 생각하지 말고, 먼저 손이 가는 쪽을 고르세요.
+    </p>
+
+    <div class="card" style="margin-top:26px">
+      <h2>이렇게 진행됩니다</h2>
+      <p class="muted" style="margin-bottom:10px">① 15문항 · 약 2분 — 정답도, 저장도 없습니다.</p>
+      <p class="muted" style="margin-bottom:10px">② 6가지 관심의 결을 점수로 보여드립니다. 가장 높은 결과 <b>가장 낮은 결(그림자)</b>을 함께 봅니다.</p>
+      <p class="muted" style="margin-bottom:10px">③ "이 알아차림이 정말 무의식에서 온 걸까?"를 스스로 점검하는 체크리스트를 드립니다.</p>
+      <p class="muted" style="margin:0">④ 그 결을 더 깊이 들여다볼 수 있는 책을 추천합니다.</p>
+      <div class="btn-row">
+        <button class="btn" id="startBtn">시작하기</button>
+        <span class="tiny">키보드 1~4로도 답할 수 있어요</span>
+      </div>
+    </div>
+
+    <p class="note">
+      이 퀴즈는 심리 검사나 진단이 아닙니다. 융의 유형론과 그림자 개념에서 착안한 <b>자기 관찰 도구</b>이며,
+      결과는 지금 이 순간의 반응을 비추는 거울 정도로 받아들이시면 좋습니다.
+    </p>
+  </section>
+
+  <!-- ===== 퀴즈 ===== -->
+  <section id="quiz" class="hidden">
+    <div class="qmeta">
+      <span class="qnum" id="qnum">01 / 15</span>
+      <span class="qnum" id="qpct">0%</span>
+    </div>
+    <div class="bar"><i id="qbar" style="width:0%"></i></div>
+    <p class="qtext" id="qtext"></p>
+    <div class="opts" id="qopts"></div>
+    <div class="btn-row">
+      <button class="btn ghost" id="backBtn">← 이전</button>
+      <button class="btn ghost" id="resetBtn">처음부터</button>
+    </div>
+  </section>
+
+  <!-- ===== 결과 ===== -->
+  <section id="result" class="hidden"></section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------------------------------------------------------
+   6가지 관심의 결
+--------------------------------------------------------------- */
+var TYPES = {
+  E:{ name:"탐구자", en:"The Seeker", color:"#6ea8fe",
+      tagline:"모르는 채로는 견디지 못하는 사람",
+      keywords:["왜","구조","자료","이해","호기심"],
+      desc:"당신의 무의식은 '왜'를 향해 자동으로 움직입니다. 지식을 좋아해서라기보다, 이해되지 않은 채 남겨진 것이 계속 마음에 걸려서입니다. 답을 얻는 순간보다 답을 향해 가는 동안 가장 살아 있다고 느끼고, 남들이 이미 넘어간 자리에서 혼자 멈춰 서 있곤 합니다.",
+      work:"연구·분석·데이터·기획·기록처럼 하나의 질문을 오래 붙들 수 있는 자리에서 이 결이 잘 드러납니다.",
+      shadowNote:"다 알고 나서 움직이려다 시작이 한없이 늦어질 수 있습니다. 이해가 끝나기 전에 손을 대보는 연습이 필요합니다." },
+  C:{ name:"창조자", en:"The Maker", color:"#f0abfc",
+      tagline:"머릿속에 있는 걸 기어이 꺼내놓는 사람",
+      keywords:["형태","표현","완성","감각","만들기"],
+      desc:"당신은 형태가 없는 것이 형태를 얻을 때 비로소 안도합니다. 잘 만들고 싶다는 욕심보다, 안에 있는 것이 밖으로 나오지 못하고 남아 있는 상태를 견디기 어려워하는 쪽에 가깝습니다. 그래서 완성되지 않은 것이 쌓이면 이유 없이 답답해집니다.",
+      work:"디자인·글쓰기·영상·개발·브랜딩처럼 손에 남는 결과물이 있는 자리에서 이 결이 잘 드러납니다.",
+      shadowNote:"완성되기 전의 것을 남에게 보이는 일을 유난히 두려워합니다. 미완성인 채로 보여주는 경험이 이 결을 자라게 합니다." },
+  N:{ name:"연결자", en:"The Connector", color:"#6ee7b7",
+      tagline:"방 안의 공기를 가장 먼저 읽는 사람",
+      keywords:["관계","공감","분위기","경청","마음"],
+      desc:"당신의 주의는 상황보다 사람에게 먼저 갑니다. 누가 말을 아꼈는지, 누구의 표정이 잠깐 굳었는지가 자동으로 들어옵니다. 배려하려고 애쓰는 게 아니라, 이미 감지해버려서 모른 척하기가 어려운 것입니다.",
+      work:"상담·교육·HR·영업·커뮤니티·돌봄처럼 사람이 일의 중심에 있는 자리에서 이 결이 잘 드러납니다.",
+      shadowNote:"남의 감정을 먼저 처리하다 자기 감정을 뒤로 미루고, 그러다 조용히 소진됩니다. '나는 지금 어떤가'를 먼저 묻는 습관이 필요합니다." },
+  G:{ name:"수호자", en:"The Guardian", color:"#fbbf24",
+      tagline:"무너지지 않게 붙들고 있는 사람",
+      keywords:["질서","책임","신뢰","대비","꾸준함"],
+      desc:"당신은 일이 잘 굴러갈 때보다, 잘 굴러가도록 미리 손써둔 것이 통했을 때 만족합니다. 통제욕이라기보다 불안을 다루는 방식에 가깝습니다. 무엇이 어긋날 수 있는지가 먼저 보이고, 그걸 알면서 두는 게 마음에 걸립니다.",
+      work:"운영·재무·품질·법무·프로젝트 관리처럼 신뢰 자체가 자산인 자리에서 이 결이 잘 드러납니다.",
+      shadowNote:"통제할 수 없는 변화 앞에서 몸이 굳습니다. 계획 없이 하루를 보내보는 연습이 오히려 이 결을 유연하게 만듭니다." },
+  P:{ name:"개척자", en:"The Pioneer", color:"#fb7185",
+      tagline:"경계선을 보면 넘고 싶어지는 사람",
+      keywords:["변화","시도","속도","모험","돌파"],
+      desc:"당신은 안정된 상태에 들어서면 이상하게 좀이 쑤십니다. 새로운 게 좋아서라기보다, 반복되기 시작한 것이 곧 죽은 것처럼 느껴지기 때문입니다. 확실해질 때까지 기다리기보다 일단 부딪혀서 알아내는 쪽을 몸이 먼저 선택합니다.",
+      work:"창업·신사업·영업개발·현장·기획처럼 변수가 많고 판이 자주 바뀌는 자리에서 이 결이 잘 드러납니다.",
+      shadowNote:"익숙해지는 순간 흥미를 잃고 다음으로 넘어갑니다. 지루한 구간을 통과해본 경험이 이 결을 결과로 만들어 줍니다." },
+  M:{ name:"관조자", en:"The Contemplative", color:"#a78bfa",
+      tagline:"의미가 없으면 끝내 움직이지 못하는 사람",
+      keywords:["의미","내면","깊이","질문","고요"],
+      desc:"당신은 무엇을 하느냐보다 그것이 무엇을 위한 것인지에 먼저 걸립니다. 남들이 이미 시작한 자리에서 혼자 '이게 결국 무슨 의미지'에 붙들려 있곤 합니다. 느린 것이 아니라, 납득되지 않은 일에는 힘이 실리지 않는 구조입니다.",
+      work:"상담·연구·글·예술·기획·에디터처럼 깊이와 해석이 필요한 자리에서 이 결이 잘 드러납니다.",
+      shadowNote:"생각이 언제나 행동보다 앞서 있어 결국 머무릅니다. 의미가 정리되기 전에 몸을 먼저 움직여보는 연습이 필요합니다." }
+};
+var ORDER = ["E","C","N","G","P","M"];
+
+/* ---------------------------------------------------------------
+   질문 15개 — 각 유형이 정확히 10번씩 등장하도록 설계
+--------------------------------------------------------------- */
+var Q = [
+ { q:"아무 일정도 없는 토요일 오후. 정신을 차려보니 나는 —",
+   o:[ ["N","누군가에게 먼저 연락해 안부를 묻고 있다"],
+       ["G","집을 정리하고 다음 주를 미리 그려보고 있다"],
+       ["P","일단 나갈 채비를 하고 있다. 어디로 갈지는 나가서 정한다"],
+       ["M","아무것도 안 하고 창밖을 오래 보고 있다"] ] },
+
+ { q:"서점에 들어서면 발이 먼저 향하는 코너는?",
+   o:[ ["E","과학·역사 — 세상이 어떻게 굴러가는지"],
+       ["C","예술·디자인 — 누군가 만들어낸 것들"],
+       ["P","여행·모험 에세이 — 떠난 사람들의 이야기"],
+       ["M","철학·심리 — 결국 이게 다 무슨 의미인지"] ] },
+
+ { q:"새 프로젝트가 시작되면, 시키지 않아도 가장 먼저 손대는 일은?",
+   o:[ ["E","자료를 모으고 전체 구조를 파악한다"],
+       ["C","컨셉과 그림부터 대충 그려본다"],
+       ["N","누가 무엇을 맡을지, 팀 분위기부터 살핀다"],
+       ["G","일정과 위험 요소를 먼저 정리한다"] ] },
+
+ { q:"처음 가본 도시에 도착했을 때, 의식하기도 전에 하는 행동은?",
+   o:[ ["C","골목의 간판과 색과 질감을 찍고 있다"],
+       ["G","숙소 위치와 돌아올 길부터 확인한다"],
+       ["P","일단 걷는다. 목적지는 걷다 보면 생긴다"],
+       ["M","사람들 사이에 앉아 한참을 그냥 있는다"] ] },
+
+ { q:"마음이 가장 불편해지는 순간은?",
+   o:[ ["E","이해되지 않은 채로 그냥 넘어가야 할 때"],
+       ["N","누군가 상처받은 걸 나만 눈치챘을 때"],
+       ["G","지키기로 한 것이 아무렇지 않게 어겨질 때"],
+       ["M","내가 왜 이걸 하고 있는지 모르겠을 때"] ] },
+
+ { q:"들었을 때 이상하게 오래 남았던 칭찬은?",
+   o:[ ["E","“너 참 깊이 파고드는구나”"],
+       ["C","“너만의 색이 있어”"],
+       ["N","“너랑 있으면 마음이 편해”"],
+       ["P","“너는 참 겁이 없구나”"] ] },
+
+ { q:"자기 전 이불 속에서 자꾸 되감기는 장면은?",
+   o:[ ["C","아직 만들지 못하고 머릿속에만 있는 것"],
+       ["N","낮에 했던 말과, 그때 그 사람의 표정"],
+       ["P","가보지 못한 곳, 해보지 않은 선택"],
+       ["M","‘나는 지금 잘 살고 있나’라는 문장"] ] },
+
+ { q:"일이 뜻대로 풀리지 않을 때 반사적으로 나오는 행동은?",
+   o:[ ["E","원인을 끝까지 캐본다"],
+       ["N","사람을 만나 이야기하면서 푼다"],
+       ["G","계획을 다시 세우고 순서를 정리한다"],
+       ["P","판을 갈아엎을 다른 길부터 찾는다"] ] },
+
+ { q:"영화가 끝난 뒤 가장 오래 남아 있는 것은?",
+   o:[ ["E","세계관의 설정과 앞뒤 논리"],
+       ["C","한 장면의 색과 음악"],
+       ["G","인물이 끝까지 지켜낸 원칙"],
+       ["M","마지막에 남겨진 질문"] ] },
+
+ { q:"나도 모르게 지갑이 열려 있는 곳은?",
+   o:[ ["C","도구, 재료, 문구류"],
+       ["N","사람들과의 밥값과 선물"],
+       ["G","정리함, 보험, 미래를 위한 것"],
+       ["M","조용한 공간, 혼자 있는 시간"] ] },
+
+ { q:"대화 중 나도 모르게 가장 오래 머무는 질문은?",
+   o:[ ["E","“그게 왜 그렇게 되는 건데?”"],
+       ["N","“그때 그 사람 마음은 어땠을까?”"],
+       ["P","“그럼 다음엔 뭘 해볼까?”"],
+       ["M","“결국 이게 무슨 의미일까?”"] ] },
+
+ { q:"어릴 때 어른들에게 가장 자주 들었던 말은?",
+   o:[ ["E","“질문이 참 많구나”"],
+       ["C","“상상력이 풍부하구나”"],
+       ["G","“어른스럽고 믿음직하구나”"],
+       ["P","“가만히 좀 있어라”"] ] },
+
+ { q:"사람들이 나에게 자주 부탁하는 일은?",
+   o:[ ["C","“이거 좀 그럴듯하게 만들어 줘”"],
+       ["N","“이 얘기 좀 들어줘”"],
+       ["G","“이건 네가 맡아주면 안심이야”"],
+       ["P","“네가 먼저 한번 해봐”"] ] },
+
+ { q:"1년의 안식년이 주어진다면?",
+   o:[ ["E","궁금했던 분야를 제대로 공부한다"],
+       ["G","미뤄둔 것들을 정리하고 삶을 재정비한다"],
+       ["P","낯선 곳을 길게 떠돈다"],
+       ["M","조용한 곳에서 나를 오래 들여다본다"] ] },
+
+ { q:"상상만 해도 가장 숨이 막히는 상황은?",
+   o:[ ["E","더 이상 배울 것이 없는 환경"],
+       ["C","정해진 대로만 해야 하는 일"],
+       ["N","아무와도 말을 섞지 않는 하루하루"],
+       ["M","바쁜데 아무 의미도 느껴지지 않는 나날"] ] }
+];
+
+/* 각 유형이 등장하는 문항 수 (정규화용) */
+var MAXHIT = (function(){
+  var m = {E:0,C:0,N:0,G:0,P:0,M:0};
+  Q.forEach(function(item){ item.o.forEach(function(op){ m[op[0]]++; }); });
+  return m;
+})();
+
+/* ---------------------------------------------------------------
+   책 추천
+--------------------------------------------------------------- */
+var BOOKS = {
+  E:[ {t:"코스모스", a:"칼 세이건", w:"'왜'를 끝까지 밀고 갔을 때 어디까지 갈 수 있는지 보여주는 책. 탐구가 냉정한 작업이 아니라 경외의 다른 이름이라는 걸 알게 됩니다."},
+      {t:"사피엔스", a:"유발 하라리", w:"당연하게 여겨온 것들의 뒷면을 통째로 뒤집습니다. 이해되지 않은 채 넘어갔던 것들이 한꺼번에 걸리기 시작합니다."},
+      {t:"생각에 관한 생각", a:"대니얼 카너먼", w:"당신의 판단 대부분이 의식보다 먼저 끝나 있다는 걸 실험으로 보여줍니다. 무의식을 다루는 가장 실증적인 입구입니다."} ],
+  C:[ {t:"창조적 행위: 존재의 방식", a:"릭 루빈", w:"만들고 싶은 충동이 왜 재능이 아니라 상태인지 이야기합니다. 완성이 아니라 알아차림에서 시작하라고 말해주는 책."},
+      {t:"아티스트 웨이", a:"줄리아 캐머런", w:"매일 아침 세 쪽을 쓰게 하는 12주 프로그램. 의식이 검열하기 전의 문장을 꺼내는 훈련이라 이 퀴즈의 문제의식과 정확히 맞닿아 있습니다."},
+      {t:"훔쳐라, 아티스트처럼", a:"오스틴 클레온", w:"‘독창적이어야 한다’는 압박을 걷어냅니다. 완성 전의 것을 내보이기 어려워하는 사람에게 특히."} ],
+  N:[ {t:"비폭력대화", a:"마셜 로젠버그", w:"감지한 것을 말로 옮기는 구체적인 방법. 남의 마음은 잘 읽는데 내 요구는 말하지 못하는 사람에게 필요한 문법입니다."},
+      {t:"타인의 해석", a:"말콤 글래드웰", w:"우리가 낯선 사람을 얼마나 자신 있게, 그리고 얼마나 자주 틀리게 읽는지에 대한 책. 잘 읽는 사람일수록 아프게 읽힙니다."},
+      {t:"사랑의 기술", a:"에리히 프롬", w:"관계를 감정이 아니라 능력으로 다룹니다. 계속 주기만 하다 소진되는 패턴의 뿌리를 짚어줍니다."} ],
+  G:[ {t:"아주 작은 습관의 힘", a:"제임스 클리어", w:"의지가 아니라 구조로 삶을 붙드는 법. 이미 잘하고 있는 것을 더 적은 힘으로 하게 만들어 줍니다."},
+      {t:"에센셜리즘", a:"그렉 맥커운", w:"책임감이 강한 사람이 가장 자주 빠지는 함정 — 다 떠안기 — 을 정면으로 다룹니다."},
+      {t:"딥 워크", a:"칼 뉴포트", w:"지켜야 할 것이 많을수록 집중은 사라집니다. 방해받지 않는 시간을 제도로 만드는 법."} ],
+  P:[ {t:"그릿", a:"앤절라 더크워스", w:"시작은 잘하는데 지루한 구간에서 흥미를 잃는 사람에게. 열정보다 오래가는 것이 무엇인지 이야기합니다."},
+      {t:"연금술사", a:"파울로 코엘료", w:"떠나야만 알 수 있는 것이 있다는 이야기. 이유를 설명하기 어려운 그 충동에 언어를 줍니다."},
+      {t:"제로 투 원", a:"피터 틸", w:"남들이 가지 않은 쪽으로 가는 성향을 실제 판단 기준으로 바꿔주는 책."} ],
+  M:[ {t:"죽음의 수용소에서", a:"빅터 프랭클", w:"의미가 없으면 움직이지 못하는 사람에게, 의미가 어디서 오는지를 극한의 자리에서 증언합니다."},
+      {t:"데미안", a:"헤르만 헤세", w:"융의 영향을 정면으로 받은 소설. 내 안에서 올라오는 것을 따라가는 일이 무엇인지에 대한 이야기입니다."},
+      {t:"인간과 상징", a:"칼 구스타프 융", w:"융이 일반 독자를 위해 남긴 마지막 책. 무의식이 어떻게 상징의 형태로 의식에 올라오는지를 직접 설명합니다."} ]
+};
+
+/* 가장 낮게 나온 결(그림자)을 열어보는 책 — 진입 장벽이 낮은 것으로 */
+var SHADOW_BOOK = {
+  E:{t:"파인만 씨, 농담도 잘하시네!", a:"리처드 파인만", w:"탐구를 의무가 아니라 장난처럼 하는 사람의 기록. 알아가는 재미의 가장 가벼운 입구입니다."},
+  C:{t:"훔쳐라, 아티스트처럼", a:"오스틴 클레온", w:"‘나는 창의적이지 않다’는 문장을 가장 빨리 무너뜨리는 얇은 책입니다."},
+  N:{t:"비폭력대화", a:"마셜 로젠버그", w:"사람에게 주의를 돌리는 일을 감정이 아니라 기술로 배울 수 있게 해줍니다."},
+  G:{t:"아주 작은 습관의 힘", a:"제임스 클리어", w:"체계가 답답한 사람도 견딜 수 있는 크기로 질서를 들여놓는 법."},
+  P:{t:"연금술사", a:"파울로 코엘료", w:"떠남을 상상해본 적 없는 사람에게, 가장 부담 없는 첫 발자국이 되어줍니다."},
+  M:{t:"인간과 상징", a:"칼 구스타프 융", w:"내면을 들여다보는 일이 막연한 감상이 아니라 하나의 작업이라는 걸 알려줍니다."}
+};
+
+/* 무의식 자체를 더 파고들고 싶을 때 (유형 무관) */
+var DEPTH_BOOKS = [
+  {t:"인간과 상징", a:"칼 구스타프 융", w:"무의식이 상징으로 올라온다는 생각의 원본. 이 퀴즈가 기대고 있는 그림자 개념도 여기서 나옵니다."},
+  {t:"꿈의 해석", a:"지그문트 프로이트", w:"무의식을 학문의 대상으로 처음 끌어올린 책. 지금 기준으로 논쟁적이지만 출발점을 보려면 피할 수 없습니다."},
+  {t:"행복의 가설", a:"조너선 하이트", w:"의식(기수)이 무의식(코끼리) 위에 올라타 있을 뿐이라는 비유. 알아차림의 한계를 가장 선명하게 그려줍니다."}
+];
+
+/* 정말 무의식에서 온 신호인지 점검하는 항목 */
+var CHECKS = [
+  "그 반응은 내가 <b>생각하기 전에</b> 이미 일어나 있었다.",
+  "왜 그랬는지 설명하려면, 나중에 <b>말을 붙여야</b> 했다.",
+  "그러지 않으려 해도 비슷한 상황에서 <b>또 반복</b>된다.",
+  "그 이야기를 할 때 <b>몸이 먼저</b> 반응한다 (긴장, 열감, 울컥함).",
+  "내가 남에게 <b>유난히 크게 반응하는 지점</b>과 닮아 있다."
+];
+
+/* ---------------------------------------------------------------
+   상태 & 화면
+--------------------------------------------------------------- */
+var answers = [];      // answers[i] = 유형 코드
+var idx = 0;
+
+var $ = function(id){ return document.getElementById(id); };
+var intro = $("intro"), quiz = $("quiz"), result = $("result");
+
+function show(el){
+  [intro, quiz, result].forEach(function(s){ s.classList.add("hidden"); });
+  el.classList.remove("hidden");
+  el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade");
+  window.scrollTo({top:0, behavior:"instant" in window ? "auto" : "auto"});
+}
+
+function pad(n){ return n < 10 ? "0" + n : "" + n; }
+
+function renderQuestion(){
+  var item = Q[idx];
+  $("qnum").textContent = pad(idx + 1) + " / " + pad(Q.length);
+  var pct = Math.round(idx / Q.length * 100);
+  $("qpct").textContent = pct + "%";
+  $("qbar").style.width = pct + "%";
+  $("qtext").textContent = item.q;
+
+  var box = $("qopts");
+  box.innerHTML = "";
+  item.o.forEach(function(op, i){
+    var b = document.createElement("button");
+    b.className = "opt";
+    b.type = "button";
+    b.innerHTML = '<span class="key">' + (i + 1) + '</span><span>' + op[1] + '</span>';
+    b.addEventListener("click", function(){ answer(op[0]); });
+    box.appendChild(b);
+  });
+
+  $("backBtn").style.visibility = idx === 0 ? "hidden" : "visible";
+}
+
+function answer(code){
+  answers[idx] = code;
+  if (idx < Q.length - 1){ idx++; renderQuestion(); }
+  else { renderResult(); }
+}
+
+function score(){
+  var raw = {E:0,C:0,N:0,G:0,P:0,M:0};
+  answers.forEach(function(c){ if (c) raw[c]++; });
+  return ORDER.map(function(k){
+    return { key:k, raw:raw[k], pct: Math.round(raw[k] / MAXHIT[k] * 100) };
+  }).sort(function(a,b){ return b.pct - a.pct || b.raw - a.raw; });
+}
+
+function bookHTML(b, n){
+  return '<div class="book">' +
+           '<div class="no">' + n + '</div>' +
+           '<div><div class="bt">' + b.t + '</div>' +
+           '<div class="ba">' + b.a + '</div>' +
+           '<p class="bw">' + b.w + '</p></div>' +
+         '</div>';
+}
+
+function renderResult(){
+  var s = score();
+  var top = TYPES[s[0].key], sec = TYPES[s[1].key];
+  var shadowKey = s[s.length - 1].key, shadow = TYPES[shadowKey];
+
+  var bars = s.map(function(r){
+    var t = TYPES[r.key];
+    return '<div class="row">' +
+             '<div class="rtop"><span class="rname" style="color:' + t.color + '">' + t.name + '</span>' +
+             '<span class="rval">' + r.pct + '%</span></div>' +
+             '<div class="track"><i data-w="' + r.pct + '" style="background:' + t.color + '"></i></div>' +
+           '</div>';
+  }).join("");
+
+  var checks = CHECKS.map(function(c, i){
+    return '<li><label><input type="checkbox" class="ck" id="ck' + i + '"><span>' + c + '</span></label></li>';
+  }).join("");
+
+  var mainBooks = BOOKS[s[0].key].map(function(b, i){ return bookHTML(b, i + 1); }).join("");
+  var depth = DEPTH_BOOKS.map(function(b, i){ return bookHTML(b, i + 1); }).join("");
+  var sb = SHADOW_BOOK[shadowKey];
+
+  result.innerHTML =
+  '<div class="card hero">' +
+    '<div class="badge">당신의 가장 두꺼운 결</div>' +
+    '<div class="typename" style="color:' + top.color + '">' + top.name + '</div>' +
+    '<p class="tagline">' + top.tagline + '</p>' +
+    '<p class="lead" style="margin:0">' + top.desc + '</p>' +
+    '<div class="kw">' + top.keywords.map(function(k){ return '<span>' + k + '</span>'; }).join("") + '</div>' +
+  '</div>' +
+
+  '<div class="card"><h2>6가지 결의 분포</h2>' +
+    '<p class="tiny" style="margin-bottom:18px">각 결마다 고를 수 있었던 횟수가 같도록 문항을 설계했습니다. 아래 수치는 “기회가 있었을 때 실제로 그쪽을 고른 비율”입니다.</p>' +
+    '<div class="rows">' + bars + '</div>' +
+  '</div>' +
+
+  '<div class="split" style="margin-top:16px">' +
+    '<div class="mini"><div class="lbl">함께 움직이는 결</div>' +
+      '<div class="val" style="color:' + sec.color + '">' + sec.name + '</div>' +
+      '<p class="tiny" style="margin:0">' + sec.tagline + '. 첫 번째 결이 지칠 때 당신을 대신 끌고 가는 쪽입니다.</p></div>' +
+    '<div class="mini"><div class="lbl">그림자 (가장 얇은 결)</div>' +
+      '<div class="val" style="color:' + shadow.color + '">' + shadow.name + '</div>' +
+      '<p class="tiny" style="margin:0">' + shadow.shadowNote + '</p></div>' +
+  '</div>' +
+
+  '<div class="card" style="margin-top:16px"><h2>이 결이 잘 드러나는 자리</h2>' +
+    '<p style="margin-bottom:0">' + top.work + '</p>' +
+    '<p class="tiny" style="margin-top:12px">직업을 정해주는 문장이 아닙니다. 어떤 일을 하든 이 결이 쓰이는 순간에 힘이 덜 든다는 뜻으로 읽어주세요.</p>' +
+  '</div>' +
+
+  '<div class="card" style="margin-top:16px"><h2>이 알아차림, 정말 무의식에서 온 걸까?</h2>' +
+    '<p class="tiny" style="margin-bottom:16px">결과를 보고 “아, 나 이런 사람이었네” 하는 순간 대부분은 의식이 급히 만들어낸 설명입니다. 진짜 무의식에서 올라온 신호에는 아래 특징이 있습니다. 방금 떠오른 그 깨달음에 해당하는 것만 체크해 보세요.</p>' +
+    '<ul class="check">' + checks + '</ul>' +
+    '<div class="verdict" id="verdict">체크한 항목: <b>0개</b> — 항목을 눌러보세요.</div>' +
+  '</div>' +
+
+  '<div class="card" style="margin-top:16px"><h2>' + top.name + '에게 권하는 책</h2>' +
+    '<p class="tiny" style="margin-bottom:16px">이미 가고 있는 방향을 더 깊이 파는 세 권입니다.</p>' +
+    mainBooks +
+  '</div>' +
+
+  '<div class="card" style="margin-top:16px"><h2>그림자를 여는 책 한 권</h2>' +
+    '<p class="tiny" style="margin-bottom:16px">가장 얇게 나온 <b style="color:' + shadow.color + '">' + shadow.name + '</b> 쪽입니다. 부족한 곳을 메우라는 뜻이 아니라, 평소 쳐다보지 않던 방향에 무엇이 있는지 확인해보는 용도입니다.</p>' +
+    bookHTML(sb, "✦") +
+  '</div>' +
+
+  '<div class="card" style="margin-top:16px"><h2>무의식 자체를 더 알고 싶다면</h2>' +
+    '<p class="tiny" style="margin-bottom:16px">유형과 상관없이, “내가 알아차린 것이 정말 무의식에서 왔는가”라는 질문 자체를 다루는 책들입니다.</p>' +
+    depth +
+  '</div>' +
+
+  '<div class="btn-row" style="justify-content:center">' +
+    '<button class="btn" id="againBtn">다시 해보기</button>' +
+    '<button class="btn ghost" id="copyBtn">결과 복사</button>' +
+  '</div>' +
+
+  '<p class="note">이 결과는 심리 진단이 아닙니다. 오늘의 컨디션에 따라 달라질 수 있고, 달라지는 것이 정상입니다. 시간을 두고 다시 해본 뒤 <b>바뀌지 않고 남는 결</b>이 있다면, 그쪽이 조금 더 믿을 만합니다.</p>' +
+  '<footer class="tiny">무의식 관심사 퀴즈 · 결과는 어디에도 저장되지 않습니다</footer>';
+
+  show(result);
+
+  /* 막대 애니메이션 */
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      Array.prototype.forEach.call(result.querySelectorAll(".track > i"), function(el){
+        el.style.width = el.getAttribute("data-w") + "%";
+      });
+    });
+  });
+
+  /* 체크리스트 */
+  var verdict = $("verdict");
+  Array.prototype.forEach.call(result.querySelectorAll(".ck"), function(cb){
+    cb.addEventListener("change", function(){
+      var n = result.querySelectorAll(".ck:checked").length;
+      var msg;
+      if (n <= 1)      msg = "아직은 <b>의식이 만든 설명</b>에 가깝습니다. 그럴듯한 이야기일 뿐일 수 있어요.";
+      else if (n <= 3) msg = "<b>무의식의 재료가 섞여</b> 있습니다. 며칠 지켜보면 더 분명해집니다.";
+      else             msg = "<b>무의식에서 올라온 신호일 가능성이 높습니다.</b> 이건 기록해 둘 만합니다.";
+      verdict.innerHTML = "체크한 항목: <b>" + n + "개</b> — " + msg;
+    });
+  });
+
+  $("againBtn").addEventListener("click", reset);
+  $("copyBtn").addEventListener("click", function(){
+    var lines = ["[무의식 관심사 퀴즈]",
+                 "가장 두꺼운 결: " + top.name + " — " + top.tagline,
+                 "함께 움직이는 결: " + sec.name,
+                 "그림자: " + shadow.name,
+                 "",
+                 "분포"];
+    s.forEach(function(r){ lines.push("  " + TYPES[r.key].name + " " + r.pct + "%"); });
+    lines.push("", "추천 도서");
+    BOOKS[s[0].key].forEach(function(b){ lines.push("  · " + b.t + " (" + b.a + ")"); });
+    lines.push("  · [그림자] " + sb.t + " (" + sb.a + ")");
+    copy(lines.join("\n"));
+  });
+}
+
+function copy(text){
+  var done = function(){ toast("결과를 복사했습니다"); };
+  var fail = function(){ toast("복사에 실패했어요"); };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else { fallback(); }
+  function fallback(){
+    try{
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta); done();
+    }catch(e){ fail(); }
+  }
+}
+
+var toastTimer;
+function toast(msg){
+  var t = $("toast");
+  t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("on"); }, 1900);
+}
+
+function reset(){
+  answers = []; idx = 0;
+  show(intro);
+}
+
+/* ---------------------------------------------------------------
+   이벤트
+--------------------------------------------------------------- */
+$("startBtn").addEventListener("click", function(){
+  answers = []; idx = 0;
+  renderQuestion();
+  show(quiz);
+});
+$("backBtn").addEventListener("click", function(){
+  if (idx > 0){ idx--; renderQuestion(); }
+});
+$("resetBtn").addEventListener("click", reset);
+
+document.addEventListener("keydown", function(e){
+  if (quiz.classList.contains("hidden")) return;
+  if (e.key >= "1" && e.key <= "4"){
+    var btns = $("qopts").querySelectorAll(".opt");
+    var i = parseInt(e.key, 10) - 1;
+    if (btns[i]) btns[i].click();
+  } else if (e.key === "Backspace" || e.key === "ArrowLeft"){
+    if (idx > 0){ e.preventDefault(); idx--; renderQuestion(); }
+  }
+});
+
+})();
+</script>
+</body>
+</html>
