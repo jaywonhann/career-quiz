@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LoL 쇼츠 메이커</title>
+<style>
+  :root { --bg:#0b0e14; --card:#151a24; --line:#262d3b; --text:#e8ecf3; --mute:#8b95a8; --gold:#c8aa6e; --red:#e5484d; --blue:#4c9aff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:22px; margin:0 0 4px; color:var(--gold); }
+  .sub { color:var(--mute); margin:0 0 24px; font-size:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  button { font:inherit; cursor:pointer; border:1px solid var(--line); background:#1d2432; color:var(--text); padding:10px 16px; border-radius:8px; }
+  button:hover:not(:disabled) { border-color:var(--gold); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  button.primary { background:var(--gold); color:#1a1405; border-color:var(--gold); font-weight:700; }
+  button.rec { background:var(--red); border-color:var(--red); font-weight:700; }
+  .dot { width:10px; height:10px; border-radius:50%; background:var(--mute); display:inline-block; margin-right:8px; }
+  .dot.recording { background:var(--red); animation:pulse 1s infinite; }
+  .dot.analyzing,.dot.rendering { background:var(--blue); animation:pulse 1s infinite; }
+  .dot.ready,.dot.done { background:#3fb950; }
+  .dot.error { background:var(--red); }
+  @keyframes pulse { 50% { opacity:.3; } }
+  .samples { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+  .sample { border:2px solid var(--line); border-radius:10px; padding:10px; background:#10141c; }
+  .sample.sel { border-color:var(--gold); }
+  .sample video { width:100%; aspect-ratio:9/16; background:#000; border-radius:6px; }
+  .sample label { display:flex; gap:8px; align-items:center; margin-top:8px; cursor:pointer; font-weight:600; }
+  .tag { font-size:12px; color:var(--mute); margin-top:4px; }
+  .cats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .cat input { display:none; }
+  .cat span { display:block; text-align:center; padding:14px 8px; border:2px solid var(--line); border-radius:10px; cursor:pointer; }
+  .cat b { display:block; font-size:18px; }
+  .cat small { color:var(--mute); }
+  .cat input:checked + span { border-color:var(--gold); background:#1f1b10; }
+  select { font:inherit; background:#1d2432; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .result { display:grid; grid-template-columns:240px 1fr; gap:18px; }
+  .result video { width:100%; aspect-ratio:9/16; background:#000; border-radius:10px; }
+  textarea { width:100%; background:#10141c; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; resize:vertical; }
+  .hidden { display:none; }
+  @media (max-width:600px) { .result { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>LoL 쇼츠 메이커</h1>
+  <p class="sub">녹화 버튼 → 게임 플레이 → 자동 하이라이트 → 카테고리 선택 → 올릴 수 있는 쇼츠 완성</p>
+
+  <section class="card">
+    <div class="row">
+      <button id="btn-rec" class="rec">● 녹화 시작</button>
+      <button id="btn-stop" disabled>■ 수동 종료</button>
+      <button id="btn-demo" title="롤 없이 전체 흐름을 체험합니다">데모로 체험</button>
+      <div style="margin-left:auto"><span id="dot" class="dot"></span><span id="msg">대기 중</span></div>
+    </div>
+  </section>
+
+  <section id="sec-samples" class="card hidden">
+    <h2 style="margin-top:0;font-size:17px">① 샘플 3개 — 쓸 장면을 고르세요</h2>
+    <div id="samples" class="samples"></div>
+  </section>
+
+  <section id="sec-submit" class="card hidden">
+    <h2 style="margin-top:0;font-size:17px">② 어떤 느낌으로 만들까요?</h2>
+    <div class="cats">
+      <label class="cat"><input type="radio" name="cat" value="fun" checked><span><b>🎉 재미</b><small>스피드 램프 · 플래시 · 컬러 팝</small></span></label>
+      <label class="cat"><input type="radio" name="cat" value="cool"><span><b>😎 멋</b><small>슬로모션 · 줌 · 시네마틱</small></span></label>
+      <label class="cat"><input type="radio" name="cat" value="funny"><span><b>🤣 웃김</b><small>쉐이크 · 리플레이 · 효과음</small></span></label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <label>배경음악 <select id="music"><option value="">없음 (게임 소리 + 효과음)</option></select></label>
+      <button id="btn-submit" class="primary" style="margin-left:auto">쇼츠 만들기 ▶</button>
+    </div>
+  </section>
+
+  <section id="sec-result" class="card hidden">
+    <h2 style="margin-top:0;font-size:17px">③ 완성!</h2>
+    <div class="result">
+      <video id="result-video" controls playsinline></video>
+      <div>
+        <p id="result-info" class="sub"></p>
+        <label class="tag">제목</label>
+        <textarea id="r-title" rows="1"></textarea>
+        <label class="tag">설명 / 해시태그</label>
+        <textarea id="r-tags" rows="2"></textarea>
+        <div class="row" style="margin-top:12px">
+          <a id="r-dl"><button class="primary">⬇ 다운로드</button></a>
+          <button id="r-copy">제목·태그 복사</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const api = (p, body) => fetch(p, body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r => r.json());
+const CAT = {fun:'재미', cool:'멋', funny:'웃김'};
+const KIND = {kill:'킬', death:'데스', assist:'어시', multikill:'멀티킬', ace:'에이스', steal:'스틸', objective:'오브젝트'};
+let lastKey = '', lastResult = '';
+
+async function act(p, body) {
+  const r = await api(p, body || {});
+  if (r.error) alert(r.error);
+  poll();
+}
+$('#btn-rec').onclick = () => act('/api/record/start');
+$('#btn-stop').onclick = () => act('/api/record/stop');
+$('#btn-demo').onclick = () => act('/api/demo');
+$('#btn-submit').onclick = () => {
+  const samples = [...document.querySelectorAll('.sample input:checked')].map(i => +i.value);
+  act('/api/submit', {category: document.querySelector('input[name=cat]:checked').value, samples, music: $('#music').value});
+};
+$('#r-copy').onclick = () => navigator.clipboard.writeText($('#r-title').value + '\n\n' + $('#r-tags').value);
+
+function renderSamples(list) {
+  $('#samples').innerHTML = list.map(s => `
+    <div class="sample sel">
+      <video src="${s.preview}" controls playsinline preload="metadata"></video>
+      <label><input type="checkbox" value="${s.id}" checked> ${s.label_ko} <span class="tag">(${s.duration}초)</span></label>
+      <div class="tag">${s.kinds.map(k => KIND[k] || k).join(' · ')} — 추천: ${CAT[s.best]}</div>
+    </div>`).join('');
+  document.querySelectorAll('.sample input').forEach(i => i.onchange = () => i.closest('.sample').classList.toggle('sel', i.checked));
+}
+
+async function poll() {
+  const s = await api('/api/status');
+  const busy = ['recording', 'analyzing', 'rendering'].includes(s.state);
+  $('#dot').className = 'dot ' + s.state;
+  $('#msg').textContent = s.message || '대기 중';
+  $('#btn-rec').disabled = busy;
+  $('#btn-demo').disabled = busy;
+  $('#btn-stop').disabled = s.state !== 'recording';
+  $('#btn-submit').disabled = s.state === 'rendering';
+  const hasSamples = s.samples.length > 0;
+  $('#sec-samples').classList.toggle('hidden', !hasSamples);
+  $('#sec-submit').classList.toggle('hidden', !hasSamples);
+  const key = s.samples.map(x => x.preview).join();
+  if (key !== lastKey) { renderSamples(s.samples); lastKey = key; }
+  const mu = $('#music'), cur = mu.value;
+  mu.innerHTML = '<option value="">없음 (게임 소리 + 효과음)</option>' + s.music.map(m => `<option>${m}</option>`).join('');
+  mu.value = cur;
+  $('#sec-result').classList.toggle('hidden', !s.result);
+  if (s.result && s.result.url !== lastResult) {
+    lastResult = s.result.url;
+    $('#result-video').src = s.result.url;
+    $('#result-info').textContent = `${CAT[s.result.category]} 스타일 · ${s.result.duration}초 · 1080×1920`;
+    $('#r-title').value = s.result.title;
+    $('#r-tags').value = s.result.hashtags;
+    $('#r-dl').href = s.result.url + '?download=1';
+    $('#sec-result').scrollIntoView({behavior:'smooth'});
+  }
+}
+poll(); setInterval(poll, 1500);
+</script>
+</body>
+</html>
