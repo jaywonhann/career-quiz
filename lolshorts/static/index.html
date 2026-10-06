@@ -90,6 +90,17 @@
           <a id="r-dl"><button class="primary">⬇ 다운로드</button></a>
           <button id="r-copy">제목·태그 복사</button>
         </div>
+        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+        <div id="yt-setup" class="tag hidden">YouTube 업로드를 쓰려면 먼저 설정이 필요해요 (lolshorts/README.md 의 “YouTube 설정”).</div>
+        <div id="yt-connect" class="row hidden"><button id="yt-btn-connect">YouTube 계정 연결</button></div>
+        <div id="yt-upload" class="hidden">
+          <div class="row">
+            <label>공개 범위 <select id="yt-privacy"><option value="private">비공개</option><option value="unlisted">일부 공개(링크)</option><option value="public">공개</option></select></label>
+            <button id="yt-btn-upload" class="primary">▶ YouTube 쇼츠로 업로드</button>
+            <button id="yt-btn-disconnect" class="tag" style="padding:4px 8px">연결 해제</button>
+          </div>
+          <div id="yt-state" class="tag" style="margin-top:8px"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -114,6 +125,15 @@ $('#btn-submit').onclick = () => {
   act('/api/submit', {category: document.querySelector('input[name=cat]:checked').value, samples, music: $('#music').value});
 };
 $('#r-copy').onclick = () => navigator.clipboard.writeText($('#r-title').value + '\n\n' + $('#r-tags').value);
+
+$('#yt-btn-connect').onclick = async () => { const r = await api('/api/youtube/connect', {}); if (r.error) return alert(r.error); window.open(r.url, '_blank'); };
+$('#yt-btn-disconnect').onclick = () => act('/api/youtube/disconnect');
+$('#yt-btn-upload').onclick = () => {
+  const p = $('#yt-privacy').value;
+  if (p === 'public' && !confirm('전체 공개로 올립니다. 계속할까요?')) return;
+  act('/api/youtube/upload', {filename: lastFile, title: $('#r-title').value, description: $('#r-tags').value, privacy: p});
+};
+let lastFile = '';
 
 function renderSamples(list) {
   $('#samples').innerHTML = list.map(s => `
@@ -143,8 +163,9 @@ async function poll() {
   mu.innerHTML = '<option value="">없음 (게임 소리 + 효과음)</option>' + s.music.map(m => `<option>${m}</option>`).join('');
   mu.value = cur;
   $('#sec-result').classList.toggle('hidden', !s.result);
+  renderYT(s.youtube);
   if (s.result && s.result.url !== lastResult) {
-    lastResult = s.result.url;
+    lastResult = s.result.url; lastFile = s.result.filename;
     $('#result-video').src = s.result.url;
     $('#result-info').textContent = `${CAT[s.result.category]} 스타일 · ${s.result.duration}초 · 1080×1920`;
     $('#r-title').value = s.result.title;
@@ -152,6 +173,17 @@ async function poll() {
     $('#r-dl').href = s.result.url + '?download=1';
     $('#sec-result').scrollIntoView({behavior:'smooth'});
   }
+}
+function renderYT(y) {
+  $('#yt-setup').classList.toggle('hidden', y.configured);
+  $('#yt-connect').classList.toggle('hidden', !y.configured || y.connected);
+  $('#yt-upload').classList.toggle('hidden', !y.connected);
+  $('#yt-btn-upload').disabled = y.state === 'uploading';
+  const st = $('#yt-state');
+  if (y.state === 'uploading') st.textContent = `업로드 중... ${Math.round(y.progress * 100)}%`;
+  else if (y.state === 'done') st.innerHTML = `✅ 업로드 완료: <a href="${y.url}" target="_blank" style="color:var(--gold)">${y.url}</a>`;
+  else if (y.state === 'error') st.textContent = '⚠ ' + y.message;
+  else st.textContent = '';
 }
 poll(); setInterval(poll, 1500);
 </script>

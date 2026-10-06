@@ -4,10 +4,17 @@ import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import config, demo
+from urllib.parse import parse_qs, urlparse
+
+from . import config, demo, youtube
 from .session import Session
 
 SESSION = Session()
+PORT = {"v": 8765}
+
+
+def redirect_uri():
+    return f"http://127.0.0.1:{PORT['v']}/oauth/callback"
 STATIC = config.BASE / "static"
 ROUTES = {"/files/out/": config.OUT_DIR, "/files/previews/": config.PREVIEW_DIR}
 
@@ -66,6 +73,21 @@ class Handler(BaseHTTPRequestHandler):
             return self._file(STATIC / "index.html")
         if path == "/api/status":
             return self._json(SESSION.status())
+        if path == "/oauth/callback":
+            qs = parse_qs(urlparse(self.path).query)
+            try:
+                if "error" in qs:
+                    raise youtube.YouTubeError(qs["error"][0])
+                youtube.finish_auth(qs["code"][0], qs["state"][0], redirect_uri())
+                msg = "YouTube 연결 완료! 이 창을 닫고 쇼츠 메이커로 돌아가세요."
+            except Exception as e:
+                msg = f"연결 실패: {e}"
+            body = f"<meta charset=utf-8><body style='font-family:sans-serif;padding:40px'><h2>{msg}</h2>".encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            return self.wfile.write(body)
         for prefix, root in ROUTES.items():
             if path.startswith(prefix):
                 name = Path(path[len(prefix):]).name  # 경로 탈출 방지
@@ -82,16 +104,24 @@ class Handler(BaseHTTPRequestHandler):
                 SESSION.stop_recording()
             elif self.path == "/api/submit":
                 SESSION.submit(body.get("category"), body.get("samples", []), body.get("music") or None)
+            elif self.path == "/api/youtube/connect":
+                return self._json({"url": youtube.auth_url(redirect_uri())})
+            elif self.path == "/api/youtube/disconnect":
+                youtube.disconnect()
+            elif self.path == "/api/youtube/upload":
+                SESSION.upload(body.get("filename", ""), body.get("title", ""), body.get("description", ""),
+                               body.get("privacy", "private"))
             elif self.path == "/api/demo":
                 demo.load_demo(SESSION)
             else:
                 return self._json({"error": "not found"}, 404)
             self._json({"ok": True})
-        except (RuntimeError, ValueError) as e:
+        except (RuntimeError, ValueError) as e:  # YouTubeError 도 RuntimeError
             self._json({"error": str(e)}, 400)
 
 
 def serve(host="127.0.0.1", port=8765):
+    PORT["v"] = port
     srv = ThreadingHTTPServer((host, port), Handler)
     print(f"LoL 쇼츠 메이커: http://{host}:{port}")
     try:

@@ -5,7 +5,7 @@ import time
 import traceback
 from pathlib import Path
 
-from . import config, events, recorder, render
+from . import config, events, recorder, render, youtube
 
 CATEGORY_TAGS = {
     "fun": "#롤 #리그오브레전드 #재밌는순간 #shorts",
@@ -30,6 +30,7 @@ class Session:
         self.stop_event = threading.Event()
         self.rec = recorder.Recorder()
         self.moments = {}
+        self.up = {"state": "idle", "message": "", "url": None, "progress": 0}
 
     def _set(self, state, msg=""):
         self.state, self.message = state, msg
@@ -37,6 +38,7 @@ class Session:
     def status(self):
         with self.lock:
             return {"state": self.state, "message": self.message, "samples": self.samples, "result": self.result,
+                    "youtube": {"configured": youtube.configured(), "connected": youtube.connected(), **self.up},
                     "music": sorted(p.name for p in config.MUSIC_DIR.glob("*") if p.suffix.lower() in (".mp3", ".wav", ".m4a", ".ogg"))}
 
     # ---- 녹화 ----
@@ -148,3 +150,27 @@ class Session:
             traceback.print_exc()
             with self.lock:
                 self._set("error", str(e))
+
+    # ---- 유튜브 업로드 ----
+    def upload(self, filename, title, description, privacy):
+        path = config.OUT_DIR / Path(filename).name  # 경로 탈출 방지
+        if not path.is_file():
+            raise ValueError("업로드할 쇼츠가 없습니다")
+        with self.lock:
+            if self.up["state"] == "uploading":
+                raise RuntimeError("이미 업로드 중입니다")
+            self.up = {"state": "uploading", "message": "YouTube 업로드 중...", "url": None, "progress": 0}
+        threading.Thread(target=self._upload, args=(path, title, description, privacy), daemon=True).start()
+
+    def _upload(self, path, title, description, privacy):
+        def prog(f):
+            with self.lock:
+                self.up["progress"] = round(f, 3)
+        try:
+            url = youtube.upload(path, title, description, privacy, progress=prog)
+            with self.lock:
+                self.up = {"state": "done", "message": "업로드 완료!", "url": url, "progress": 1}
+        except Exception as e:
+            traceback.print_exc()
+            with self.lock:
+                self.up = {"state": "error", "message": str(e), "url": None, "progress": 0}
