@@ -91,16 +91,23 @@
           <button id="r-copy">제목·태그 복사</button>
         </div>
         <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
-        <div id="yt-setup" class="tag hidden">YouTube 업로드를 쓰려면 먼저 설정이 필요해요 (lolshorts/README.md 의 “YouTube 설정”).</div>
+        <div class="row" style="margin-top:12px">
+          <button id="b-yt" class="primary">▶ YouTube 업로드 페이지 열기</button>
+          <button id="b-folder">📁 폴더 열기</button>
+        </div>
+        <p class="tag">YouTube 업로드 창에 영상 파일을 끌어놓고, 위의 제목·태그를 붙여넣으면 끝이에요.</p>
+        <div id="phone" class="tag"></div>
+        <details style="margin-top:12px"><summary class="tag" style="cursor:pointer">고급: API 자동 업로드 (구글 클라우드 설정 필요)</summary>
+        <div id="yt-setup" class="tag hidden">설정 방법은 lolshorts/README.md 의 “YouTube 설정”을 보세요.</div>
         <div id="yt-connect" class="row hidden"><button id="yt-btn-connect">YouTube 계정 연결</button></div>
         <div id="yt-upload" class="hidden">
           <div class="row">
             <label>공개 범위 <select id="yt-privacy"><option value="private">비공개</option><option value="unlisted">일부 공개(링크)</option><option value="public">공개</option></select></label>
-            <button id="yt-btn-upload" class="primary">▶ YouTube 쇼츠로 업로드</button>
+            <button id="yt-btn-upload" class="primary">▶ 자동 업로드</button>
             <button id="yt-btn-disconnect" class="tag" style="padding:4px 8px">연결 해제</button>
           </div>
           <div id="yt-state" class="tag" style="margin-top:8px"></div>
-        </div>
+        </div></details>
       </div>
     </div>
   </section>
@@ -124,6 +131,8 @@ $('#btn-submit').onclick = () => {
   const samples = [...document.querySelectorAll('.sample input:checked')].map(i => +i.value);
   act('/api/submit', {category: document.querySelector('input[name=cat]:checked').value, samples, music: $('#music').value});
 };
+$('#b-yt').onclick = () => { navigator.clipboard && navigator.clipboard.writeText($('#r-title').value + '\n\n' + $('#r-tags').value); window.open('https://www.youtube.com/upload', '_blank'); };
+$('#b-folder').onclick = () => act('/api/open_folder');
 $('#r-copy').onclick = () => navigator.clipboard.writeText($('#r-title').value + '\n\n' + $('#r-tags').value);
 
 $('#yt-btn-connect').onclick = async () => { const r = await api('/api/youtube/connect', {}); if (r.error) return alert(r.error); window.open(r.url, '_blank'); };
@@ -133,7 +142,7 @@ $('#yt-btn-upload').onclick = () => {
   if (p === 'public' && !confirm('전체 공개로 올립니다. 계속할까요?')) return;
   act('/api/youtube/upload', {filename: lastFile, title: $('#r-title').value, description: $('#r-tags').value, privacy: p});
 };
-let lastFile = '';
+let lastFile = '', phoneUrl = '';
 
 function renderSamples(list) {
   $('#samples').innerHTML = list.map(s => `
@@ -163,6 +172,7 @@ async function poll() {
   mu.innerHTML = '<option value="">없음 (게임 소리 + 효과음)</option>' + s.music.map(m => `<option>${m}</option>`).join('');
   mu.value = cur;
   $('#sec-result').classList.toggle('hidden', !s.result);
+  phoneUrl = s.phone_url || '';
   renderYT(s.youtube);
   if (s.result && s.result.url !== lastResult) {
     lastResult = s.result.url; lastFile = s.result.filename;
@@ -175,6 +185,7 @@ async function poll() {
   }
 }
 function renderYT(y) {
+  $('#phone').innerHTML = phoneUrl ? `📱 폰에서 받기: 같은 와이파이에서 <b>${phoneUrl}</b> 접속` : '📱 폰으로 받으려면 <code>python -m lolshorts --phone</code> 으로 실행하세요';
   $('#yt-setup').classList.toggle('hidden', y.configured);
   $('#yt-connect').classList.toggle('hidden', !y.configured || y.connected);
   $('#yt-upload').classList.toggle('hidden', !y.connected);
